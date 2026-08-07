@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: archive.hanazono.energy_system_calculator.main
-

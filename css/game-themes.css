@@ -1,0 +1,74 @@
+/* ==========================================================================
+   ECS (Energy Calculator System) - Game Theme Accents
+   Role: Theme colors and visual branding for individual gacha games.
+   ========================================================================== */
+
+/* Genshin Impact */
+.preset-chip[data-game="genshin"].active {
+  --preset-bg: rgba(6, 182, 212, 0.15);
+  --preset-color: #06b6d4;
+  --preset-shadow: rgba(6, 182, 212, 0.35);
+}
+
+/* Honkai: Star Rail */
+.preset-chip[data-game="hsr"].active {
+  --preset-bg: rgba(139, 92, 246, 0.15);
+  --preset-color: #8b5cf6;
+  --preset-shadow: rgba(139, 92, 246, 0.35);
+}
+
+/* Wuthering Waves */
+.preset-chip[data-game="wuwa"].active {
+  --preset-bg: rgba(16, 185, 129, 0.15);
+  --preset-color: #10b981;
+  --preset-shadow: rgba(16, 185, 129, 0.35);
+}
+
+/* Zenless Zone Zero */
+.preset-chip[data-game="zzz"].active {
+  --preset-bg: rgba(245, 158, 11, 0.15);
+  --preset-color: #f59e0b;
+  --preset-shadow: rgba(245, 158, 11, 0.35);
+}
+
+/* Arknights */
+.preset-chip[data-game="arknights"].active {
+  --preset-bg: rgba(244, 63, 94, 0.15);
+  --preset-color: #f43f5e;
+  --preset-shadow: rgba(244, 63, 94, 0.35);
+}
+
+/* Fate/Grand Order */
+.preset-chip[data-game="fgo"].active {
+  --preset-bg: rgba(59, 130, 246, 0.15);
+  --preset-color: #3b82f6;
+  --preset-shadow: rgba(59, 130, 246, 0.35);
+}
+
+/* Blue Archive */
+.preset-chip[data-game="bluearchive"].active {
+  --preset-bg: rgba(14, 165, 233, 0.15);
+  --preset-color: #0ea5e9;
+  --preset-shadow: rgba(14, 165, 233, 0.35);
+}
+
+/* Reverse 1999 */
+.preset-chip[data-game="reverse1999"].active {
+  --preset-bg: rgba(217, 119, 6, 0.15);
+  --preset-color: #d97706;
+  --preset-shadow: rgba(217, 119, 6, 0.35);
+}
+
+/* Nikke */
+.preset-chip[data-game="nikke"].active {
+  --preset-bg: rgba(225, 29, 72, 0.15);
+  --preset-color: #e11d48;
+  --preset-shadow: rgba(225, 29, 72, 0.35);
+}
+
+/* Custom Config */
+.preset-chip[data-game="custom"].active {
+  --preset-bg: rgba(99, 102, 241, 0.15);
+  --preset-color: #6366f1;
+  --preset-shadow: rgba(99, 102, 241, 0.35);
+}
