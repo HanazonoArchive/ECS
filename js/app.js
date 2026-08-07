@@ -7,9 +7,10 @@
 import { GAME_PRESETS, getPresetById } from './presets.js';
 import { calculateFullTime, calculateMilestones } from './calculator.js';
 import { loadState, saveState } from './storage.js';
-import { initTheme, applyTheme, getActiveTheme } from './themeController.js';
+import { initTheme, applyTheme, getActiveTheme, getNextTheme } from './themeController.js';
 import { renderPresets, updateRingGauge, updateStatCards, renderMilestones, updateTargetSolvers, showToast } from './uiManager.js';
 import { parse12HourToDate, format12HourTime } from './timeFormatter.js';
+import { ClockScrubberModal } from './clockModal.js';
 
 class EnergyCalculatorApp {
   constructor() {
@@ -45,6 +46,9 @@ class EnergyCalculatorApp {
     this.targetTimeAmpm = document.getElementById('targetTimeAmpm');
     this.themeToggleBtn = document.getElementById('themeToggleBtn');
     this.copyBtn = document.getElementById('copySummaryBtn');
+    this.helpBtn = document.getElementById('helpBtn');
+    this.helpModal = document.getElementById('helpModal');
+    this.helpModalClose = document.getElementById('helpModalClose');
   }
 
   populateInputsFromState() {
@@ -97,6 +101,40 @@ class EnergyCalculatorApp {
         if (this.currentInput) this.currentInput.value = val;
         this.onStateChange();
       });
+
+      let sliderTarget = this.state.currentEnergy;
+      let animCurrentEnergy = this.state.currentEnergy;
+      let isSliderAnimating = false;
+
+      this.rangeSlider.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 5 : -5;
+        sliderTarget = Math.max(0, Math.min(this.state.maxEnergy, sliderTarget + delta));
+
+        if (!isSliderAnimating) {
+          isSliderAnimating = true;
+          const animateSlider = () => {
+            const diff = sliderTarget - animCurrentEnergy;
+            if (Math.abs(diff) < 0.2) {
+              animCurrentEnergy = sliderTarget;
+              this.state.currentEnergy = sliderTarget;
+              this.rangeSlider.value = sliderTarget;
+              if (this.currentInput) this.currentInput.value = sliderTarget;
+              this.onStateChange();
+              isSliderAnimating = false;
+            } else {
+              animCurrentEnergy += diff * 0.35;
+              const rounded = Math.round(animCurrentEnergy);
+              this.state.currentEnergy = rounded;
+              this.rangeSlider.value = rounded;
+              if (this.currentInput) this.currentInput.value = rounded;
+              this.onStateChange();
+              requestAnimationFrame(animateSlider);
+            }
+          };
+          requestAnimationFrame(animateSlider);
+        }
+      }, { passive: false });
     }
 
     // Max Energy & Rate Inputs
@@ -154,13 +192,49 @@ class EnergyCalculatorApp {
       });
     }
 
-    // Theme Switcher Button
+    // Interactive Clock Scrubber Modal Instantiation
+    this.clockModal = new ClockScrubberModal({
+      onTimeSelect: (h, m, ampm) => {
+        if (this.targetTimeHours) this.targetTimeHours.value = h;
+        if (this.targetTimeMinutes) this.targetTimeMinutes.value = String(m).padStart(2, '0');
+        if (this.targetTimeAmpm) this.targetTimeAmpm.textContent = ampm;
+        onTargetTimeChange();
+        showToast(`Target set to ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`);
+      }
+    });
+
+    const openClockBtn = document.getElementById('openClockModalBtn');
+    if (openClockBtn) {
+      openClockBtn.addEventListener('click', () => {
+        const h = parseInt(this.targetTimeHours?.value || '8', 10);
+        const m = parseInt(this.targetTimeMinutes?.value || '0', 10);
+        const ampm = this.targetTimeAmpm?.textContent.trim() || 'PM';
+        this.clockModal.open(h, m, ampm);
+      });
+    }
+
+    const timeContainer = document.getElementById('timePickerContainer');
+    if (timeContainer) {
+      let holdTimer = null;
+      timeContainer.addEventListener('mousedown', (e) => {
+        if (['INPUT', 'BUTTON'].includes(e.target.tagName.toUpperCase())) return;
+        holdTimer = setTimeout(() => {
+          const h = parseInt(this.targetTimeHours?.value || '8', 10);
+          const m = parseInt(this.targetTimeMinutes?.value || '0', 10);
+          const ampm = this.targetTimeAmpm?.textContent.trim() || 'PM';
+          this.clockModal.open(h, m, ampm);
+        }, 220);
+      });
+      timeContainer.addEventListener('mouseup', () => { if (holdTimer) clearTimeout(holdTimer); });
+      timeContainer.addEventListener('mouseleave', () => { if (holdTimer) clearTimeout(holdTimer); });
+    }
+
+    // Theme Switcher Button (cycles through all themes)
     if (this.themeToggleBtn) {
       this.themeToggleBtn.addEventListener('click', () => {
-        const currentTheme = getActiveTheme();
-        const nextTheme = currentTheme === 'dark' ? 'cyber' : (currentTheme === 'cyber' ? 'light' : 'dark');
-        applyTheme(nextTheme);
-        showToast(`Theme changed to ${nextTheme.toUpperCase()}`);
+        const next = getNextTheme();
+        applyTheme(next.id);
+        showToast(`Theme: ${next.name}`);
       });
     }
 
@@ -168,6 +242,21 @@ class EnergyCalculatorApp {
     if (this.copyBtn) {
       this.copyBtn.addEventListener('click', () => {
         this.copySummaryToClipboard();
+      });
+    }
+
+    // Help Modal
+    if (this.helpBtn && this.helpModal) {
+      this.helpBtn.addEventListener('click', () => {
+        this.helpModal.classList.add('open');
+      });
+    }
+    if (this.helpModalClose && this.helpModal) {
+      this.helpModalClose.addEventListener('click', () => {
+        this.helpModal.classList.remove('open');
+      });
+      this.helpModal.addEventListener('click', (e) => {
+        if (e.target === this.helpModal) this.helpModal.classList.remove('open');
       });
     }
 

@@ -128,34 +128,46 @@ export function calculateEnergyAtTime(targetTime, current, max, rateMinutes, now
  * @returns {import('./types.js').MilestoneItem[]}
  */
 export function calculateMilestones(current, max, rateMinutes, now = new Date(), customCosts = []) {
-  const milestoneValues = new Set();
+  const milestones = [];
+  const seen = new Set();
 
-  // Percentage milestones
-  [0.25, 0.50, 0.75, 0.90, 1.0].forEach(p => {
-    milestoneValues.add(Math.round(max * p));
+  // Percentage milestones with clean labels
+  const percentages = [
+    { pct: 0.25, label: '25%' },
+    { pct: 0.50, label: '50%' },
+    { pct: 0.75, label: '75%' },
+    { pct: 1.0,  label: 'MAX' }
+  ];
+
+  percentages.forEach(({ pct, label }) => {
+    const val = Math.round(max * pct);
+    seen.add(val);
+    milestones.push({ targetEnergy: val, label });
   });
 
-  // Custom domain/boss costs
+  // Custom domain costs — derive their percentage for consistent labeling
   customCosts.forEach(cost => {
-    if (cost > 0 && cost <= max) {
-      milestoneValues.add(cost);
+    if (cost > 0 && cost <= max && !seen.has(cost)) {
+      seen.add(cost);
+      const pct = Math.round((cost / max) * 100);
+      milestones.push({ targetEnergy: cost, label: `${pct}%` });
     }
   });
 
-  const sortedValues = Array.from(milestoneValues).sort((a, b) => a - b);
+  milestones.sort((a, b) => a.targetEnergy - b.targetEnergy);
 
-  return sortedValues.map(val => {
-    const isReached = current >= val;
-    const needed = Math.max(0, val - current);
+  return milestones.map(m => {
+    const isReached = current >= m.targetEnergy;
+    const needed = Math.max(0, m.targetEnergy - current);
     const minutesNeeded = needed * rateMinutes;
     const reachTime = new Date(now.getTime() + minutesNeeded * 60 * 1000);
 
     return {
-      label: val === max ? 'Max Capacity (100%)' : `${val} Points`,
-      targetEnergy: val,
+      label: m.label,
+      targetEnergy: m.targetEnergy,
       reachTime,
-      formattedTime12h: isReached ? 'Achieved' : format12HourTimeShort(reachTime),
-      durationText: isReached ? 'Ready Now' : `in ${formatDurationFromMinutes(minutesNeeded)}`,
+      formattedTime12h: isReached ? '—' : format12HourTimeShort(reachTime),
+      durationText: isReached ? '0h 0m 0s' : formatDurationFromMinutes(minutesNeeded),
       isReached
     };
   });

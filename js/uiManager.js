@@ -5,8 +5,61 @@
  */
 
 import { GAME_PRESETS } from './presets.js';
-import { format12HourTime, format12HourTimeShort } from './timeFormatter.js';
+import { format12HourTime } from './timeFormatter.js';
 import { calculateSpendForTarget, calculateEnergyAtTime } from './calculator.js';
+
+let isDragScrollBound = false;
+
+/**
+ * Enable smooth mouse wheel horizontal scrolling for presets container
+ * @param {HTMLElement} container 
+ */
+function enablePresetWheelScroll(container) {
+  if (isDragScrollBound || !container) return;
+  isDragScrollBound = true;
+
+  container.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    container.scrollBy({
+      left: e.deltaY * 1.2,
+      behavior: 'smooth'
+    });
+  }, { passive: false });
+}
+
+/**
+ * Enable vertical click-and-drag scrolling for card panels
+ * @param {HTMLElement} panel 
+ */
+
+export function enableVerticalDragScroll(panel) {
+  if (!panel || panel.dataset.vDragBound) return;
+  panel.dataset.vDragBound = 'true';
+
+  let isDown = false;
+  let startY = 0;
+  let scrollTop = 0;
+
+  panel.addEventListener('mousedown', (e) => {
+    // Skip if clicking interactive elements
+    const tag = e.target.tagName.toUpperCase();
+    if (['INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'A', 'LABEL'].includes(tag)) return;
+    isDown = true;
+    startY = e.pageY - panel.offsetTop;
+    scrollTop = panel.scrollTop;
+  });
+
+  panel.addEventListener('mouseleave', () => { isDown = false; });
+  panel.addEventListener('mouseup', () => { isDown = false; });
+
+  panel.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const y = e.pageY - panel.offsetTop;
+    const walk = (y - startY) * 1.5;
+    panel.scrollTop = scrollTop - walk;
+  });
+}
 
 /**
  * Render game preset selector chips
@@ -24,8 +77,13 @@ export function renderPresets(activePresetId, onPresetSelect) {
     chip.className = `preset-chip ${preset.id === activePresetId ? 'active' : ''}`;
     chip.dataset.game = preset.id;
     chip.setAttribute('type', 'button');
+
+    const iconHtml = preset.iconType === 'img'
+      ? `<img src="${preset.iconSrc}" alt="${preset.name}" draggable="false">`
+      : preset.iconSrc;
+
     chip.innerHTML = `
-      <span class="preset-chip-icon">${preset.iconSvg}</span>
+      <span class="preset-chip-icon">${iconHtml}</span>
       <span>${preset.name}</span>
     `;
 
@@ -37,10 +95,45 @@ export function renderPresets(activePresetId, onPresetSelect) {
 
     container.appendChild(chip);
   });
+
+  enablePresetWheelScroll(container);
+
+  // Attach vertical drag scroll to all card panels
+  document.querySelectorAll('.card-panel').forEach(panel => {
+    enableVerticalDragScroll(panel);
+  });
 }
 
 /**
- * Update energy ring gauge visual
+ * Calculate progressive HSL color based on energy percentage (0% = Red, 33% = Orange, 66% = Yellow, 100% = Green)
+ * @param {number} pct (0 to 100)
+ * @returns {{ color: string, bg: string, glow: string }}
+ */
+export function getProgressiveEnergyColor(pct) {
+  const clampPct = Math.max(0, Math.min(100, pct));
+  let hue;
+
+  if (clampPct <= 33) {
+    // 0% -> 33%: Red (0°) to Orange (28°)
+    hue = (clampPct / 33) * 28;
+  } else if (clampPct <= 66) {
+    // 33% -> 66%: Orange (28°) to Yellow (50°)
+    hue = 28 + ((clampPct - 33) / 33) * 22;
+  } else {
+    // 66% -> 100%: Yellow (50°) to Emerald Green (140°)
+    hue = 50 + ((clampPct - 66) / 34) * 90;
+  }
+
+  const h = Math.round(hue);
+  return {
+    color: `hsl(${h}, 85%, 52%)`,
+    bg: `hsla(${h}, 85%, 52%, 0.15)`,
+    glow: `hsla(${h}, 85%, 52%, 0.3)`
+  };
+}
+
+/**
+ * Update energy ring gauge visual & dynamic input colors
  * @param {number} current 
  * @param {number} max 
  * @param {number} percentage 
@@ -50,16 +143,27 @@ export function updateRingGauge(current, max, percentage) {
   const maxElem = document.getElementById('ringMaxValue');
   const percentElem = document.getElementById('ringPercentage');
   const progressPath = document.getElementById('ringProgressPath');
+  const currentInput = document.getElementById('currentEnergyInput');
+  const rangeSlider = document.getElementById('currentRangeSlider');
 
-  if (currentElem) currentElem.textContent = current;
+  const { color, bg, glow } = getProgressiveEnergyColor(percentage);
+
+  if (currentElem) {
+    currentElem.textContent = Math.round(current);
+    currentElem.style.color = color;
+  }
   if (maxElem) maxElem.textContent = `/ ${max}`;
-  if (percentElem) percentElem.textContent = `${percentage}% FULL`;
+  if (percentElem) {
+    percentElem.textContent = percentage >= 100 ? 'FULL' : `${percentage}%`;
+    percentElem.style.color = color;
+    percentElem.style.backgroundColor = bg;
+  }
 
   if (progressPath) {
-    // Circumference = 2 * PI * r = 2 * 3.14159 * 90 = 565.48
     const circumference = 565.48;
     const offset = circumference - (percentage / 100) * circumference;
     progressPath.style.strokeDashoffset = Math.max(0, offset);
+    progressPath.style.stroke = color;
   }
 }
 
@@ -95,18 +199,25 @@ export function renderMilestones(milestones, energyName) {
 
   container.innerHTML = '';
 
+  // Header row
+  const header = document.createElement('div');
+  header.className = 'milestone-item milestone-header';
+  header.innerHTML = `
+    <span class="milestone-label">Tier</span>
+    <span class="milestone-amount">Amt</span>
+    <span class="milestone-time">Time</span>
+    <span class="milestone-eta">ETA</span>
+  `;
+  container.appendChild(header);
+
   milestones.forEach(m => {
     const item = document.createElement('div');
-    item.className = 'milestone-item';
+    item.className = `milestone-item${m.isReached ? ' milestone-reached' : ''}`;
     item.innerHTML = `
-      <div class="milestone-info">
-        <span class="milestone-badge">${m.targetEnergy} ${energyName}</span>
-        <span class="milestone-label">${m.label}</span>
-      </div>
-      <div class="milestone-timing">
-        <span class="milestone-time">${m.formattedTime12h}</span>
-        <span class="milestone-eta">(${m.durationText})</span>
-      </div>
+      <span class="milestone-label">${m.label}</span>
+      <span class="milestone-amount">${m.targetEnergy}</span>
+      <span class="milestone-time">${m.formattedTime12h}</span>
+      <span class="milestone-eta">${m.durationText}</span>
     `;
     container.appendChild(item);
   });
@@ -153,7 +264,7 @@ export function showToast(message) {
   }
 
   toast.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
     <span>${message}</span>
   `;
 

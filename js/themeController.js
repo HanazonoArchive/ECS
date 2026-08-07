@@ -6,9 +6,23 @@
 
 import { loadState, saveState } from './storage.js';
 
+/** All available themes in cycle order */
+export const THEME_LIST = [
+  { id: 'dark',    name: 'Dark Void' },
+  { id: 'cyber',   name: 'Cyber Neon' },
+  { id: 'light',   name: 'Clean Light' },
+  { id: 'sakura',  name: 'Sakura' },
+  { id: 'ocean',   name: 'Ocean' },
+  { id: 'forest',  name: 'Forest' },
+  { id: 'sunset',  name: 'Sunset' },
+  { id: 'grape',   name: 'Grape' },
+  { id: 'mint',    name: 'Mint' },
+  { id: 'crimson', name: 'Crimson' }
+];
+
 /**
  * Apply theme to document
- * @param {'dark'|'cyber'|'light'} theme 
+ * @param {string} theme 
  */
 export function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
@@ -17,20 +31,27 @@ export function applyTheme(theme) {
 
 /**
  * Get active theme
- * @returns {'dark'|'cyber'|'light'}
+ * @returns {string}
  */
 export function getActiveTheme() {
   const saved = loadState().theme;
-  if (saved) return saved;
-
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-    return 'light';
-  }
+  if (saved && THEME_LIST.some(t => t.id === saved)) return saved;
   return 'dark';
 }
 
 /**
- * Initialize theme listeners
+ * Get the next theme in rotation
+ * @returns {{ id: string, name: string }}
+ */
+export function getNextTheme() {
+  const current = getActiveTheme();
+  const idx = THEME_LIST.findIndex(t => t.id === current);
+  const next = THEME_LIST[(idx + 1) % THEME_LIST.length];
+  return next;
+}
+
+/**
+ * Initialize theme
  */
 export function initTheme() {
   const currentTheme = getActiveTheme();

@@ -1,76 +1,62 @@
 /* ==========================================================================
-   ECS (Energy Calculator System) - Layout Structure
-   Role: Defines application grid, navbar, hero section, sidebars, responsive containers.
+   ECS (Energy Calculator System) - Layout Structure (Strict 1-Screen Bento)
+   Role: Defines strict 100vh layout, fixed bento boxes, internal hidden drag-scrolling.
    ========================================================================== */
 
 .app-container {
   max-width: 1280px;
+  height: 100vh;
+  max-height: 100vh;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 3rem 1.25rem;
-  min-height: 100vh;
+  padding: 0.5rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 0.45rem;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-/* Header & Navbar */
+/* Header & Navbar - Simple 1-line title, fixed height */
 .app-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
+  padding: 0.35rem 0.75rem;
   background: var(--bg-card);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
 }
 
 .brand-section {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-}
-
-.brand-icon-wrapper {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 14px var(--accent-glow);
-  color: #ffffff;
 }
 
 .brand-title-group h1 {
-  font-size: 1.25rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, var(--text-main), var(--text-muted));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.brand-title-group p {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
 }
 
 .header-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.4rem;
 }
 
-/* Presets Carousel / Quick Selector Bar */
+/* Presets Carousel / Draggable Quick Selector Bar */
 .presets-section {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.2rem;
 }
 
 .presets-header {
@@ -80,55 +66,101 @@
 }
 
 .section-label {
-  font-size: 0.8rem;
+  font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--text-dim);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
 }
 
 .presets-grid {
   display: flex;
-  gap: 0.65rem;
+  gap: 0.35rem;
   overflow-x: auto;
-  padding: 0.25rem 0.25rem 0.75rem 0.25rem;
-  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 0.1rem 0.1rem 0.25rem 0.1rem;
+  user-select: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .presets-grid::-webkit-scrollbar {
-  height: 4px;
+  display: none;
 }
 
-/* Main Dashboard Workspace (2-Column Grid) */
+/* Main Dashboard Workspace (Strict Bento Grid filling remaining height) */
 .workspace-grid {
+  flex: 1 1 auto;
+  min-height: 0; /* Ensures flex container child does not expand beyond 100vh */
   display: grid;
-  grid-template-columns: 1fr 1.25fr;
-  gap: 1.5rem;
-  align-items: start;
+  grid-template-columns: 310px 1fr 330px;
+  gap: 0.55rem;
+  align-items: stretch;
+  overflow: hidden;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
+  .workspace-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
   .workspace-grid {
     grid-template-columns: 1fr;
   }
 }
 
-/* Column Cards */
+/* Column Stack for Column 2 */
+.column-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Compact Bento Card Panels with Internal Drag-Scroll */
 .card-panel {
+  height: 100%;
+  max-height: 100%;
   background: var(--bg-card);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.75rem;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  gap: 0.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  box-sizing: border-box;
+}
+
+.card-panel.stat-panel-compact {
+  height: auto;
+  max-height: none;
+  flex: 0 0 auto;
+  overflow-y: visible;
+}
+
+.card-panel.solver-panel-flex {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+.card-panel::-webkit-scrollbar {
+  display: none;
 }
 
 .card-panel:hover {
@@ -136,44 +168,46 @@
 }
 
 .panel-title {
-  font-size: 1.1rem;
+  font-size: 0.8rem;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.35rem;
   color: var(--text-main);
-  padding-bottom: 0.75rem;
+  padding-bottom: 0.3rem;
   border-bottom: 1px solid var(--border-color);
+  flex: 0 0 auto;
 }
 
-/* Analytics Grid Inside Right Column */
+/* Stats Grid Inside Telemetry Panel */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: 0.45rem;
+  flex: 0 0 auto;
 }
 
-@media (max-width: 576px) {
+@media (max-width: 480px) {
   .stats-grid {
     grid-template-columns: 1fr;
   }
 }
 
-/* App Footer */
+/* Compact App Footer */
 .app-footer {
-  margin-top: auto;
-  padding-top: 1.5rem;
+  flex: 0 0 auto;
+  padding-top: 0.35rem;
   border-top: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.8rem;
+  font-size: 0.68rem;
   color: var(--text-dim);
 }
 
 .footer-links {
   display: flex;
-  gap: 1rem;
+  gap: 0.65rem;
 }
 
 .footer-links a:hover {

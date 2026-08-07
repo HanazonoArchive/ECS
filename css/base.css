@@ -20,26 +20,16 @@ body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
   color: var(--text-main);
-  min-height: 100vh;
-  line-height: 1.5;
-  overflow-x: hidden;
+  height: 100vh;
+  max-height: 100vh;
+  line-height: 1.4;
+  overflow: hidden;
   position: relative;
 }
 
-/* Background Atmospheric Gradient Mesh */
+/* Background Solid Surface */
 body::before {
-  content: '';
-  position: fixed;
-  top: -20%;
-  left: -10%;
-  width: 120vw;
-  height: 120vh;
-  background: 
-    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: -1;
+  display: none;
 }
 
 /* Custom Scrollbar */
